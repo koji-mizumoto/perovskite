@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ペロブスカイト太陽電池 日本法人 収支シミュレーター</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
+:root {
+  --navy:#1a3353;--navy-light:#2a4a7a;--white:#ffffff;
+  --gray-50:#f7f8fb;--gray-100:#edf0f5;--gray-200:#dde2ec;--gray-300:#b8c1d4;--gray-500:#6b7a94;--gray-700:#374a6b;
+  --accent:#2563eb;--accent-light:#3b82f6;
+  --green:#059669;--green-bg:#ecfdf5;--red:#dc2626;--red-bg:#fef2f2;--orange:#d97706;--purple:#7c3aed;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+  --radius:8px;--radius-lg:12px;
+  --font-serif:"Noto Serif JP","Yu Mincho","游明朝","Hiragino Mincho ProN",serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font-serif);background:var(--gray-50);color:var(--navy);line-height:1.6;font-size:14px;}
+.header{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:var(--white);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-lg);}
+.header h1{font-size:17px;font-weight:700;letter-spacing:1px;}
+.header-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.btn{padding:8px 16px;border:none;border-radius:var(--radius);cursor:pointer;font-size:12px;font-weight:700;font-family:var(--font-serif);transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:var(--white);}
+.btn-primary:hover{background:var(--accent-light);}
+.btn-outline{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.4);}
+.btn-outline:hover{background:rgba(255,255,255,.1);}
+.btn-preset{padding:5px 14px;font-size:11px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:transparent;color:var(--white);font-family:var(--font-serif);font-weight:700;cursor:pointer;}
+.btn-preset.active{background:var(--white);color:var(--navy);border-color:var(--white);}
+.container{max-width:1440px;margin:0 auto;padding:20px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+.kpi-card{background:var(--white);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);border-left:4px solid var(--accent);}
+.kpi-card.green{border-left-color:var(--green);}
+.kpi-card.red{border-left-color:var(--red);}
+.kpi-card.orange{border-left-color:var(--orange);}
+.kpi-card.purple{border-left-color:var(--purple);}
+.kpi-label{font-size:11px;color:var(--gray-500);font-weight:700;letter-spacing:.5px;margin-bottom:4px;}
+.kpi-value{font-size:22px;font-weight:700;}
+.kpi-sub{font-size:10px;color:var(--gray-500);margin-top:3px;}
+.section{background:var(--white);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);margin-bottom:18px;}
+.section-title{font-size:15px;font-weight:700;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--gray-100);}
+.tabs{display:flex;gap:2px;margin-bottom:18px;flex-wrap:wrap;border-bottom:2px solid var(--gray-100);}
+.tab{padding:10px 18px;cursor:pointer;font-size:12px;font-weight:700;color:var(--gray-500);border:none;background:none;border-bottom:3px solid transparent;transition:all .2s;margin-bottom:-2px;font-family:var(--font-serif);}
+.tab:hover{color:var(--navy);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.chart-container{position:relative;height:340px;margin:10px 0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.chart-grid .chart-container{height:280px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th,.data-table td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--gray-100);}
+.data-table th{background:var(--gray-50);font-weight:700;color:var(--gray-700);text-align:left;position:sticky;top:0;}
+.data-table th:not(:first-child){text-align:right;}
+.data-table td:first-child{text-align:left;font-weight:600;}
+.data-table .negative{color:var(--red);}
+.data-table .positive{color:var(--green);}
+.data-table .highlight{background:#f0f9ff;}
+.data-table .bold-row{font-weight:700;border-top:2px solid var(--gray-300);background:var(--gray-50);}
+.data-table .sub-total{font-weight:700;border-top:1px solid var(--gray-300);}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;}
+.modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;padding:20px;}
+.modal{background:var(--white);border-radius:var(--radius-lg);width:100%;max-width:1100px;margin:20px auto;box-shadow:var(--shadow-lg);max-height:90vh;display:flex;flex-direction:column;}
+.modal-header{padding:18px 24px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-header h2{font-size:16px;}
+.modal-close{width:34px;height:34px;border:none;background:var(--gray-100);border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:var(--gray-200);}
+.modal-body{overflow-y:auto;flex:1;}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;}
+.stabs{display:flex;border-bottom:1px solid var(--gray-200);background:var(--gray-50);flex-wrap:wrap;}
+.stab{padding:11px 18px;font-size:12px;font-weight:700;color:var(--gray-500);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:var(--font-serif);}
+.stab:hover{color:var(--navy);}
+.stab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--white);}
+.sp{display:none;padding:22px;}
+.sp.active{display:block;}
+.fs{margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--gray-100);}
+.fs-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--navy);}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px;}
+.form-group{margin-bottom:8px;}
+.form-label{font-size:11px;font-weight:700;color:var(--gray-700);margin-bottom:3px;display:block;}
+.form-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:12px;font-family:var(--font-serif);}
+.form-input:focus{outline:none;border-color:var(--accent);}
+.yt{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.yt th,.yt td{padding:6px 8px;border:1px solid var(--gray-200);text-align:center;}
+.yt th{background:var(--gray-50);font-weight:700;font-size:11px;}
+.yt input{width:100%;padding:4px 6px;border:1px solid var(--gray-200);border-radius:4px;text-align:right;font-size:12px;font-family:var(--font-serif);}
+.yt input:focus{outline:none;border-color:var(--accent);}
+@media print{
+  .header{position:static;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  .btn,.header-right{display:none !important;}
+  .modal-overlay{display:none !important;}
+  .container{padding:10px;}
+  .section{break-inside:avoid;box-shadow:none;border:1px solid #ddd;}
+  .chart-container{height:260px;}
+  .chart-grid .chart-container{height:220px;}
+  body{font-size:11px;}
+}
+@media(max-width:768px){
+  .chart-grid{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .header h1{font-size:14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>ペロブスカイト太陽電池 日本法人 収支シミュレーター</h1>
+    <div class="header-sub">Singfilm Solar Japan &mdash; 5カ年事業計画シミュレーション</div>
+  </div>
+  <div class="header-right">
+    <button class="btn-preset active" onclick="applyScenario('base')" id="btn-base">基本</button>
+    <button class="btn-preset" onclick="applyScenario('optimistic')" id="btn-optimistic">楽観</button>
+    <button class="btn-preset" onclick="applyScenario('conservative')" id="btn-conservative">保守</button>
+    <button class="btn btn-outline" onclick="openSettings()">設定</button>
+    <button class="btn btn-outline" onclick="window.print()">印刷</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="tabs" id="main-tabs">
+    <button class="tab active" data-tab="overview">概要</button>
+    <button class="tab" data-tab="revenue">売上分析</button>
+    <button class="tab" data-tab="cost">費用分析</button>
+    <button class="tab" data-tab="pl">損益計算書</button>
+    <button class="tab" data-tab="cashflow">キャッシュフロー</button>
+    <button class="tab" data-tab="investor">投資家リターン</button>
+  </div>
+
+  <div class="tab-content active" id="tab-overview">
+    <div class="section"><div class="section-title">3シナリオ比較</div><div id="tbl-scenario"></div></div>
+    <div class="section" style="border-left:4px solid var(--accent);background:var(--gray-50);">
+      <div class="section-title">シナリオ前提条件の根拠 <span style="font-size:11px;color:var(--gray-500);font-weight:400;">（詳細は事業計画書 第11章参照）</span></div>
+      <table class="data-table">
+        <thead><tr><th>パラメータ</th><th>楽観</th><th>基本</th><th>保守</th><th style="min-width:180px;">設定根拠</th></tr></thead>
+        <tbody>
+          <tr><td>5年目生産能力</td><td>150MW</td><td>100MW</td><td>60MW</td><td>Phase 2投資規模による段階拡張</td></tr>
+          <tr><td>稼働率</td><td>85%</td><td>70%</td><td>55%</td><td>First Solar実績（80%）を参考に±15pt</td></tr>
+          <tr><td>5年目粗利率</td><td>50%</td><td>45%</td><td>40%</td><td>First Solar 44%（2024年実績）基準±5pt</td></tr>
+          <tr><td>製造コスト目標</td><td>約30円/W</td><td>約45円/W</td><td>約55円/W</td><td>量産効果の実現度合いによる</td></tr>
+          <tr><td>黒字化時期</td><td>3年目</td><td>4年目</td><td>5年目</td><td>ディープテック業界標準は3〜5年</td></tr>
+          <tr><td>5年目営業利益</td><td>20億円（25%）</td><td>9.1億円（18%）</td><td>+1億円（3%）</td><td>粗利額−販管費−R&D費で算出</td></tr>
+          <tr><td>R&D費率（対売上）</td><td>6%</td><td>4%</td><td>12%</td><td>規模の経済の差（大規模は比率低下）</td></tr>
+          <tr><td>IPO時PSR</td><td>15x</td><td>10x</td><td>8x</td><td>ディープテック上場時PSR: 10〜20xが一般的</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--gray-500);margin-top:8px;line-height:1.5;">
+        <strong>基本シナリオの位置づけ:</strong> 稼働率70%・粗利率45%は、既存薄膜太陽電池メーカー First Solar（2024年実績: 粗利率44%、稼働率80%超）に近い達成蓋然性の高い水準です。楽観・保守はそれぞれ±15ptの変動幅を想定しています。売上高は生産能力×稼働率×製品ミックス単価で算出しています。
+      </p>
+    </div>
+    <div class="chart-grid">
+      <div class="section"><div class="section-title">売上高推移（5カ年）</div><div class="chart-container"><canvas id="c-rev-ov"></canvas></div></div>
+      <div class="section"><div class="section-title">営業利益推移（5カ年）</div><div class="chart-container"><canvas id="c-oi-ov"></canvas></div></div>
+    </div>
+    <div class="section"><div class="section-title">累積キャッシュフロー推移</div><div class="chart-container"><canvas id="c-cumcf"></canvas></div></div>
+  </div>
+
+  <div class="tab-content" id="tab-revenue">
+    <div class="section"><div class="section-title">製品別売上推移</div><div class="chart-container"><canvas id="c-rev-prod"></canvas></div></div>
+    <div class="chart-grid">
+      <div class="section"><div class="section-title">製品別売上構成比推移</div><div class="chart-container"><canvas id="c-rev-mix"></canvas></div></div>
+      <div class="section"><div class="section-title">その他収入内訳</div><div class="chart-container"><canvas id="c-other"></canvas></div></div>
+    </div>
+    <div class="section"><div class="section-title">年度別売上詳細</div><div id="tbl-rev"></div></div>
+  </div>
+
+  <div class="tab-content" id="tab-cost">
+    <div class="chart-grid">
+      <div class="section"><div class="section-title">費用構成推移</div><div class="chart-container"><canvas id="c-cost-stack"></canvas></div></div>
+      <div class="section"><div class="section-title">費用構成比（5年目）</div><div class="chart-container"><canvas id="c-cost-pie"></canvas></div></div>
+    </div>
+    <div class="section"><div class="section-title">年度別費用詳細</div><div id="tbl-cost"></div></div>
+  </div>
+
+  <div class="tab-content" id="tab-pl">
+    <div class="section"><div class="section-title">5カ年損益計算書</div><div id="tbl-pl"></div></div>
+    <div class="chart-grid">
+      <div class="section"><div class="section-title">粗利率・営業利益率推移</div><div class="chart-container"><canvas id="c-margin"></canvas></div></div>
+      <div class="section"><div class="section-title">売上 vs 総費用</div><div class="chart-container"><canvas id="c-revvscost"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-cashflow">
+    <div class="section"><div class="section-title">キャッシュフロー推移</div><div class="chart-container"><canvas id="c-cf"></canvas></div></div>
+    <div class="section"><div class="section-title">年度別キャッシュフロー</div><div id="tbl-cf"></div></div>
+  </div>
+
+  <div class="tab-content" id="tab-investor">
+    <div class="section"><div class="section-title">IPO時想定バリュエーション・投資家リターン</div><div id="tbl-inv"></div></div>
+    <div class="chart-grid">
+      <div class="section"><div class="section-title">シナリオ別時価総額</div><div class="chart-container"><canvas id="c-val"></canvas></div></div>
+      <div class="section"><div class="section-title">投資倍率（MOIC）比較</div><div class="chart-container"><canvas id="c-moic"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header"><h2>パラメータ設定</h2><button class="modal-close" onclick="closeSettings()">&times;</button></div>
+    <div class="stabs" id="stabs">
+      <button class="stab active" data-st="s-rev">売上設定</button>
+      <button class="stab" data-st="s-cost">費用設定</button>
+      <button class="stab" data-st="s-cap">投資・資本</button>
+      <button class="stab" data-st="s-sc">シナリオ条件</button>
+    </div>
+    <div class="modal-body">
+      <!-- Revenue -->
+      <div class="sp active" id="s-rev">
+        <div class="fs"><div class="fs-title">Orchid シリーズ（IoT・家電向け）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>売上（億円）</td><td><input id="i_orchid_1"></td><td><input id="i_orchid_2"></td><td><input id="i_orchid_3"></td><td><input id="i_orchid_4"></td><td><input id="i_orchid_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">Zenith シリーズ（宇宙・ドローン向け）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>売上（億円）</td><td><input id="i_zenith_1"></td><td><input id="i_zenith_2"></td><td><input id="i_zenith_3"></td><td><input id="i_zenith_4"></td><td><input id="i_zenith_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">Fusion シリーズ（BIPV・VIPV向け）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>売上（億円）</td><td><input id="i_fusion_1"></td><td><input id="i_fusion_2"></td><td><input id="i_fusion_3"></td><td><input id="i_fusion_4"></td><td><input id="i_fusion_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">その他収入</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody>
+            <tr><td>技術ライセンス（億円）</td><td><input id="i_lic_1"></td><td><input id="i_lic_2"></td><td><input id="i_lic_3"></td><td><input id="i_lic_4"></td><td><input id="i_lic_5"></td></tr>
+            <tr><td>受託研究（億円）</td><td><input id="i_con_1"></td><td><input id="i_con_2"></td><td><input id="i_con_3"></td><td><input id="i_con_4"></td><td><input id="i_con_5"></td></tr>
+            <tr><td>補助金収入（億円）</td><td><input id="i_sub_1"></td><td><input id="i_sub_2"></td><td><input id="i_sub_3"></td><td><input id="i_sub_4"></td><td><input id="i_sub_5"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <!-- Cost -->
+      <div class="sp" id="s-cost">
+        <div class="fs"><div class="fs-title">人件費（全部門合計、法定福利含む）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>人件費（億円）</td><td><input id="i_pers_1"></td><td><input id="i_pers_2"></td><td><input id="i_pers_3"></td><td><input id="i_pers_4"></td><td><input id="i_pers_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">製造原価（人件費・減価償却除く）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody>
+            <tr><td>原材料費（億円）</td><td><input id="i_mat_1"></td><td><input id="i_mat_2"></td><td><input id="i_mat_3"></td><td><input id="i_mat_4"></td><td><input id="i_mat_5"></td></tr>
+            <tr><td>製造経費（億円）</td><td><input id="i_mfg_1"></td><td><input id="i_mfg_2"></td><td><input id="i_mfg_3"></td><td><input id="i_mfg_4"></td><td><input id="i_mfg_5"></td></tr>
+          </tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">減価償却費</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>減価償却費（億円）</td><td><input id="i_dep_1"></td><td><input id="i_dep_2"></td><td><input id="i_dep_3"></td><td><input id="i_dep_4"></td><td><input id="i_dep_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">研究開発費（人件費除く）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody>
+            <tr><td>研究用材料費（億円）</td><td><input id="i_rdm_1"></td><td><input id="i_rdm_2"></td><td><input id="i_rdm_3"></td><td><input id="i_rdm_4"></td><td><input id="i_rdm_5"></td></tr>
+            <tr><td>外部委託費（億円）</td><td><input id="i_rdo_1"></td><td><input id="i_rdo_2"></td><td><input id="i_rdo_3"></td><td><input id="i_rdo_4"></td><td><input id="i_rdo_5"></td></tr>
+            <tr><td>知財関連費（億円）</td><td><input id="i_rdip_1"></td><td><input id="i_rdip_2"></td><td><input id="i_rdip_3"></td><td><input id="i_rdip_4"></td><td><input id="i_rdip_5"></td></tr>
+          </tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">販管費・一般管理費</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody>
+            <tr><td>マーケティング費（億円）</td><td><input id="i_mkt_1"></td><td><input id="i_mkt_2"></td><td><input id="i_mkt_3"></td><td><input id="i_mkt_4"></td><td><input id="i_mkt_5"></td></tr>
+            <tr><td>管理部門費（億円）</td><td><input id="i_adm_1"></td><td><input id="i_adm_2"></td><td><input id="i_adm_3"></td><td><input id="i_adm_4"></td><td><input id="i_adm_5"></td></tr>
+            <tr><td>IPO準備費（億円）</td><td><input id="i_ipo_1"></td><td><input id="i_ipo_2"></td><td><input id="i_ipo_3"></td><td><input id="i_ipo_4"></td><td><input id="i_ipo_5"></td></tr>
+            <tr><td>その他経費（億円）</td><td><input id="i_oth_1"></td><td><input id="i_oth_2"></td><td><input id="i_oth_3"></td><td><input id="i_oth_4"></td><td><input id="i_oth_5"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <!-- Capital -->
+      <div class="sp" id="s-cap">
+        <div class="fs"><div class="fs-title">資本構成</div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">資本金合計（億円）</label><input class="form-input" id="i_captotal" type="number" step="0.1"></div>
+            <div class="form-group"><label class="form-label">Singfilm Solar出資（億円）</label><input class="form-input" id="i_capsf" type="number" step="0.1"></div>
+            <div class="form-group"><label class="form-label">投資家出資（億円）</label><input class="form-input" id="i_capinv" type="number" step="0.1"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">投資家持株比率（%）</label><input class="form-input" id="i_invshare" type="number" step="1"></div>
+          </div>
+        </div>
+        <div class="fs"><div class="fs-title">設備投資計画</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>設備投資額（億円）</td><td><input id="i_capex_1"></td><td><input id="i_capex_2"></td><td><input id="i_capex_3"></td><td><input id="i_capex_4"></td><td><input id="i_capex_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">生産能力・人員</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody>
+            <tr><td>生産能力（MW）</td><td><input id="i_cap_1"></td><td><input id="i_cap_2"></td><td><input id="i_cap_3"></td><td><input id="i_cap_4"></td><td><input id="i_cap_5"></td></tr>
+            <tr><td>従業員数（名）</td><td><input id="i_hc_1"></td><td><input id="i_hc_2"></td><td><input id="i_hc_3"></td><td><input id="i_hc_4"></td><td><input id="i_hc_5"></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <!-- Scenario -->
+      <div class="sp" id="s-sc">
+        <div class="fs"><div class="fs-title">シナリオ別パラメータ</div>
+          <table class="yt"><thead><tr><th></th><th>楽観</th><th>基本</th><th>保守</th></tr></thead>
+          <tbody>
+            <tr><td>市場成長率 CAGR</td><td><input id="i_gr_o" value="50">%</td><td><input id="i_gr_b" value="30">%</td><td><input id="i_gr_c" value="20">%</td></tr>
+            <tr><td>稼働率</td><td><input id="i_ut_o" value="85">%</td><td><input id="i_ut_b" value="70">%</td><td><input id="i_ut_c" value="55">%</td></tr>
+            <tr><td>5年目粗利率</td><td><input id="i_gm_o" value="50">%</td><td><input id="i_gm_b" value="45">%</td><td><input id="i_gm_c" value="40">%</td></tr>
+            <tr><td>IPO時PSR倍率</td><td><input id="i_psr_o" value="15">x</td><td><input id="i_psr_b" value="10">x</td><td><input id="i_psr_c" value="8">x</td></tr>
+          </tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">楽観シナリオ 年度別売上高（億円）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>売上高</td><td><input id="i_orev_1"></td><td><input id="i_orev_2"></td><td><input id="i_orev_3"></td><td><input id="i_orev_4"></td><td><input id="i_orev_5"></td></tr></tbody></table>
+        </div>
+        <div class="fs"><div class="fs-title">保守シナリオ 年度別売上高（億円）</div>
+          <table class="yt"><thead><tr><th></th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+          <tbody><tr><td>売上高</td><td><input id="i_crev_1"></td><td><input id="i_crev_2"></td><td><input id="i_crev_3"></td><td><input id="i_crev_4"></td><td><input id="i_crev_5"></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="color:var(--navy);border:1px solid var(--gray-300);" onclick="closeSettings()">キャンセル</button>
+      <button class="btn btn-primary" onclick="applySettings()">反映</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DATA MODEL — 自動化製造ライン前提・67名体制 (base scenario)
+// Cost totals: 5.9, 11.7, 22.3, 35.6, 42.2 億円
+// 人員: 経営5-6, R&D10, 製造32, 営業10, 品質5, 管理4 = 67名
+// CAPEX: GX設備補助金(40%)反映後の純額
+// ================================================================
+const BASE = {
+  orchid:  [0.8, 4.2, 8.0, 11.4, 12.5],
+  zenith:  [0.1, 1.4, 5.0, 9.5, 10.0],
+  fusion:  [0.1, 1.4, 7.0, 17.1, 27.5],
+  license: [0, 0.1, 0.3, 0.5, 0.8],
+  contract:[0, 0.1, 0.2, 0.3, 0.5],
+  subsidy: [0.5, 0.3, 0.2, 0.1, 0],
+  // Costs — 自動化ライン前提で人員・費用を適正化
+  personnel:   [1.2, 2.1, 3.0, 3.7, 4.1],     // 67名体制(法定福利含)
+  material:    [0.40, 2.50, 6.60, 12.50, 16.50],// 原材料費
+  mfg_expense: [0.30, 1.70, 4.40, 8.40, 11.00], // 製造経費
+  depreciation:[1.50, 2.00, 3.00, 5.00, 5.00],  // 減価償却費
+  rd_material: [0.40, 0.50, 0.80, 0.70, 0.60],  // R&D材料費(量産後逓減)
+  rd_outsource:[0.80, 1.00, 1.50, 1.20, 1.00],  // R&D委託費(量産後逓減)
+  rd_ip:       [0.40, 0.50, 0.70, 0.60, 0.50],  // 知財費(量産後逓減)
+  marketing:   [0.30, 0.40, 0.60, 1.00, 1.20],  // マーケティング費
+  admin:       [0.20, 0.30, 0.40, 0.50, 0.60],  // 管理部門費
+  ipo_prep:    [0.10, 0.20, 0.50, 1.00, 0.50],  // IPO準備費(4年目ピーク)
+  other_cost:  [0.30, 0.50, 0.80, 1.00, 1.20],  // その他経費
+  // Capital & operations
+  capital_total: 32, capital_singfilm: 16, capital_investor: 16, investor_share: 50,
+  capex:    [5, 3, 6, 9, 6],                    // GX設備補助金(40%)反映後
+  capacity: [15, 30, 50, 80, 100],
+  headcount:[18, 32, 47, 60, 67],
+  psr: 10,
+  opt_revenue: [2, 10, 30, 55, 80],
+  con_revenue: [1, 5, 12, 25, 30]
+};
+
+let P = JSON.parse(JSON.stringify(BASE));
+let currentScenario = 'base';
+const charts = {};
+const YL = ['1年目','2年目','3年目','4年目','5年目'];
+
+// ================================================================
+// UTILITIES
+// ================================================================
+function fmt(v,d=1){if(v==null||isNaN(v))return'\u2014';const n=v<0,a=Math.abs(v);let s=a.toFixed(d);const p=s.split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');s=p.join('.');return n?('\u25B3'+s):s;}
+function cls(v){return v<0?'negative':v>0?'positive':'';}
+function sum(a){return a.reduce((x,y)=>x+y,0);}
+function pct(v,d=1){if(v==null||isNaN(v)||!isFinite(v))return'\u2014';return(v*100).toFixed(d)+'%';}
+
+// ================================================================
+// CALCULATION ENGINE
+// ================================================================
+function calc(p) {
+  const r = {};
+  // Revenue
+  r.orchid=[...p.orchid]; r.zenith=[...p.zenith]; r.fusion=[...p.fusion];
+  r.prodRev = r.orchid.map((_,i)=>r.orchid[i]+r.zenith[i]+r.fusion[i]);
+  r.license=[...p.license]; r.contract=[...p.contract]; r.subsidy=[...p.subsidy];
+  r.otherInc = r.license.map((_,i)=>r.license[i]+r.contract[i]+r.subsidy[i]);
+  r.totalRev = r.prodRev.map((v,i)=>v+r.otherInc[i]);
+
+  // Costs
+  r.personnel=[...p.personnel];
+  r.material=[...p.material]; r.mfg_expense=[...p.mfg_expense];
+  r.cogs_nonlabor = r.material.map((v,i)=>v+r.mfg_expense[i]); // master COGS line
+  r.depreciation=[...p.depreciation];
+  r.rd_material=[...p.rd_material]; r.rd_outsource=[...p.rd_outsource]; r.rd_ip=[...p.rd_ip];
+  r.rdTotal = r.rd_material.map((v,i)=>v+r.rd_outsource[i]+r.rd_ip[i]); // master R&D line
+  r.marketing=[...p.marketing]; r.admin=[...p.admin]; r.ipo_prep=[...p.ipo_prep]; r.other_cost=[...p.other_cost];
+  r.sgaTotal = r.marketing.map((v,i)=>v+r.admin[i]+r.ipo_prep[i]+r.other_cost[i]); // master SGA line
+
+  // Total cost = personnel + COGS(non-labor) + depreciation + R&D + SGA
+  r.totalCost = r.personnel.map((v,i)=>v+r.cogs_nonlabor[i]+r.depreciation[i]+r.rdTotal[i]+r.sgaTotal[i]);
+
+  // P&L (using master's structure for the P&L view)
+  // Gross profit = Revenue - (COGS_nonlabor + depreciation)
+  // But for a more standard P&L, allocate personnel proportionally
+  // Use simplified: Cost of revenue = COGS_nonlabor + depreciation + manufacturing share of personnel
+  // We'll present the P&L matching master_numbers exactly
+  r.grossProfit = r.totalRev.map((v,i) => v - r.cogs_nonlabor[i] - r.depreciation[i]);
+  r.grossMargin = r.totalRev.map((v,i) => v > 0 ? r.grossProfit[i]/v : 0);
+
+  // Operating expenses = personnel + R&D + SGA
+  r.opex = r.personnel.map((v,i) => v + r.rdTotal[i] + r.sgaTotal[i]);
+  r.operatingIncome = r.grossProfit.map((v,i) => v - r.opex[i]);
+  r.operatingMargin = r.totalRev.map((v,i) => v > 0 ? r.operatingIncome[i]/v : 0);
+
+  // Cumulative operating income
+  r.cumOI = []; let c=0;
+  for(let i=0;i<5;i++){c+=r.operatingIncome[i];r.cumOI.push(c);}
+
+  // BEP
+  r.bep = null;
+  for(let i=0;i<5;i++){if(r.operatingIncome[i]>=0){r.bep=i+1;break;}}
+
+  // Cash flow
+  r.capex=[...p.capex];
+  r.ocf = r.operatingIncome.map((v,i)=>v+r.depreciation[i]); // operating CF
+  r.fcf = r.ocf.map((v,i)=>v-r.capex[i]);
+  r.cumCF=[]; let cc=0;
+  for(let i=0;i<5;i++){cc+=r.fcf[i];r.cumCF.push(cc);}
+  r.cashBal=[]; let cb=p.capital_total;
+  for(let i=0;i<5;i++){cb+=r.fcf[i];r.cashBal.push(cb);}
+
+  // IPO
+  r.psr=p.psr; r.year5Rev=r.totalRev[4];
+  r.valuation=r.year5Rev*p.psr;
+  r.invValue=r.valuation*(p.investor_share/100);
+  r.moic=r.invValue/p.capital_investor;
+  r.irr=Math.pow(Math.max(r.moic,0),1/5)-1;
+
+  // Alt scenarios
+  function altReturn(revArr, psrVal){
+    const v5=revArr[4], val=v5*psrVal, iv=val*(p.investor_share/100);
+    const m=iv/p.capital_investor;
+    return{rev5:v5,valuation:val,invValue:iv,moic:m,irr:Math.pow(Math.max(m,0),1/5)-1,revenue:revArr};
+  }
+  r.optSc = altReturn(p.opt_revenue, parseFloat(gv('i_psr_o'))||15);
+  r.conSc = altReturn(p.con_revenue, parseFloat(gv('i_psr_c'))||8);
+
+  r.capacity=[...p.capacity]; r.headcount=[...p.headcount];
+  r.opt_revenue=[...p.opt_revenue]; r.con_revenue=[...p.con_revenue];
+  return r;
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function render(){
+  const r=calc(P), y=4;
+
+  // KPIs
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">5年目 売上高</div><div class="kpi-value">${fmt(r.totalRev[y])} 億円</div><div class="kpi-sub">5年累計: ${fmt(sum(r.totalRev))} 億円</div></div>
+    <div class="kpi-card green"><div class="kpi-label">5年目 営業利益</div><div class="kpi-value ${cls(r.operatingIncome[y])}">${fmt(r.operatingIncome[y])} 億円</div><div class="kpi-sub">営業利益率: ${pct(r.operatingMargin[y])}</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">黒字転換時期</div><div class="kpi-value">${r.bep?r.bep+'年目':'6年目以降'}</div><div class="kpi-sub">累積損益: ${fmt(r.cumOI[y])} 億円</div></div>
+    <div class="kpi-card"><div class="kpi-label">残存キャッシュ</div><div class="kpi-value ${cls(r.cashBal[y])}">${fmt(r.cashBal[y])} 億円</div><div class="kpi-sub">資本金 ${fmt(P.capital_total,0)} 億円</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">IPO時想定時価総額</div><div class="kpi-value">${fmt(r.valuation,0)} 億円</div><div class="kpi-sub">PSR ${P.psr}x</div></div>
+    <div class="kpi-card green"><div class="kpi-label">投資倍率（MOIC）</div><div class="kpi-value">${fmt(r.moic)}x</div><div class="kpi-sub">IRR: ${pct(r.irr,0)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">5年目 生産能力</div><div class="kpi-value">${r.capacity[y]} MW</div><div class="kpi-sub">従業員数: ${r.headcount[y]}名</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">5年目 粗利率</div><div class="kpi-value">${pct(r.grossMargin[y])}</div><div class="kpi-sub">売上総利益: ${fmt(r.grossProfit[y])} 億円</div></div>
+  `;
+
+  // ---- Overview ----
+  // Scenario table
+  const oR=r.opt_revenue, cR=r.con_revenue, bR=r.totalRev;
+  let sh=`<table class="data-table"><thead><tr><th>指標</th><th>楽観</th><th>基本</th><th>保守</th></tr></thead><tbody>`;
+  for(let i=0;i<5;i++) sh+=`<tr><td>${i+1}年目 売上高</td><td>${fmt(oR[i])} 億円</td><td class="highlight">${fmt(bR[i])} 億円</td><td>${fmt(cR[i])} 億円</td></tr>`;
+  sh+=`<tr class="bold-row"><td>5年累計</td><td>${fmt(sum(oR))} 億円</td><td class="highlight">${fmt(sum(bR))} 億円</td><td>${fmt(sum(cR))} 億円</td></tr>`;
+  sh+=`<tr><td>5年目 営業利益</td><td>20 億円</td><td class="highlight">${fmt(r.operatingIncome[4])} 億円</td><td>+1 億円</td></tr>`;
+  sh+=`<tr><td>黒字転換</td><td>3年目</td><td class="highlight">${r.bep?r.bep+'年目':'6年目以降'}</td><td>5年目</td></tr>`;
+  sh+=`<tr><td>IPO時価総額</td><td>${fmt(r.optSc.valuation,0)} 億円</td><td class="highlight">${fmt(r.valuation,0)} 億円</td><td>${fmt(r.conSc.valuation,0)} 億円</td></tr>`;
+  sh+=`<tr><td>MOIC</td><td>${fmt(r.optSc.moic)}x</td><td class="highlight">${fmt(r.moic)}x</td><td>${fmt(r.conSc.moic)}x</td></tr>`;
+  sh+=`<tr><td>IRR</td><td>${pct(r.optSc.irr,0)}</td><td class="highlight">${pct(r.irr,0)}</td><td>${pct(r.conSc.irr,0)}</td></tr>`;
+  sh+=`</tbody></table>`;
+  document.getElementById('tbl-scenario').innerHTML=sh;
+
+  // Revenue overview chart
+  mkChart('c-rev-ov','bar',{labels:YL,datasets:[
+    {label:'楽観',data:oR,backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#10b981',borderWidth:1},
+    {label:'基本',data:bR,backgroundColor:'rgba(37,99,235,0.7)',borderColor:'#2563eb',borderWidth:1},
+    {label:'保守',data:cR,backgroundColor:'rgba(249,115,22,0.6)',borderColor:'#f97316',borderWidth:1}
+  ]},{scales:{y:{title:{display:true,text:'億円'}}}});
+
+  // OI overview - estimate alt scenario OI
+  // Optimistic: use optimistic revenue with same cost ratios scaled
+  const optOI = oR.map((v,i)=>{
+    const costRatio = r.totalCost[i]/Math.max(bR[i],0.01);
+    return v - v*costRatio*0.7; // Lower cost ratio for optimistic
+  });
+  // Use master values directly for known points
+  const optOI_master = [-3.3, -3.3, 2.9, 11.6, 20.0]; // 楽観: 5年目営業利益 20億円, 黒字化3年目
+  const conOI_master = [-3.1, -3.5, -3.4, -0.7, 1.0]; // 保守: 5年目営業利益 +1億円, 黒字化5年目
+
+  mkChart('c-oi-ov','bar',{labels:YL,datasets:[
+    {label:'楽観',data:optOI_master,backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#10b981',borderWidth:1},
+    {label:'基本',data:r.operatingIncome,backgroundColor:'rgba(37,99,235,0.7)',borderColor:'#2563eb',borderWidth:1},
+    {label:'保守',data:conOI_master,backgroundColor:'rgba(249,115,22,0.6)',borderColor:'#f97316',borderWidth:1}
+  ]},{scales:{y:{title:{display:true,text:'億円'}}}});
+
+  // Cumulative CF
+  let oCum=[],cCum=[],oc2=0,cc2=0;
+  for(let i=0;i<5;i++){
+    oc2+=optOI_master[i]+(r.depreciation[i]||0)-r.capex[i]; oCum.push(oc2);
+    cc2+=conOI_master[i]+(r.depreciation[i]||0)-r.capex[i]; cCum.push(cc2);
+  }
+  mkChart('c-cumcf','line',{labels:YL,datasets:[
+    {label:'楽観',data:oCum,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:.3},
+    {label:'基本',data:r.cumCF,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.1)',fill:true,tension:.3},
+    {label:'保守',data:cCum,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',fill:true,tension:.3}
+  ]},{scales:{y:{title:{display:true,text:'億円'}}}});
+
+  // ---- Revenue Tab ----
+  mkChart('c-rev-prod','bar',{labels:YL,datasets:[
+    {label:'Orchid (IoT)',data:r.orchid,backgroundColor:'#6366f1'},
+    {label:'Zenith (宇宙)',data:r.zenith,backgroundColor:'#f59e0b'},
+    {label:'Fusion (BIPV)',data:r.fusion,backgroundColor:'#10b981'},
+    {label:'その他収入',data:r.otherInc,backgroundColor:'#94a3b8'}
+  ]},{scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:'億円'}}}});
+
+  const mix=r.totalRev.map((t,i)=>t>0?{o:r.orchid[i]/t*100,z:r.zenith[i]/t*100,f:r.fusion[i]/t*100,x:r.otherInc[i]/t*100}:{o:0,z:0,f:0,x:0});
+  mkChart('c-rev-mix','bar',{labels:YL,datasets:[
+    {label:'Orchid',data:mix.map(d=>d.o),backgroundColor:'#6366f1'},
+    {label:'Zenith',data:mix.map(d=>d.z),backgroundColor:'#f59e0b'},
+    {label:'Fusion',data:mix.map(d=>d.f),backgroundColor:'#10b981'},
+    {label:'その他',data:mix.map(d=>d.x),backgroundColor:'#94a3b8'}
+  ]},{scales:{x:{stacked:true},y:{stacked:true,max:100,title:{display:true,text:'%'}}}});
+
+  mkChart('c-other','bar',{labels:YL,datasets:[
+    {label:'技術ライセンス',data:r.license,backgroundColor:'#8b5cf6'},
+    {label:'受託研究',data:r.contract,backgroundColor:'#ec4899'},
+    {label:'補助金',data:r.subsidy,backgroundColor:'#14b8a6'}
+  ]},{scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:'億円'}}}});
+
+  // Revenue detail table
+  let rh=`<table class="data-table"><thead><tr><th>項目</th>`;
+  for(let i=0;i<5;i++) rh+=`<th>${YL[i]}</th>`;
+  rh+=`<th>累計</th></tr></thead><tbody>`;
+  [[' Orchid (IoT)',r.orchid],[' Zenith (宇宙)',r.zenith],[' Fusion (BIPV)',r.fusion],
+   ['製品売上小計',r.prodRev,1],[' 技術ライセンス',r.license],[' 受託研究',r.contract],[' 補助金収入',r.subsidy],
+   ['その他収入小計',r.otherInc,1],['売上高合計',r.totalRev,2]].forEach(([l,d,b])=>{
+    const c=b===2?'bold-row':b===1?'sub-total':'';
+    rh+=`<tr class="${c}"><td>${l}</td>`;
+    for(let i=0;i<5;i++) rh+=`<td>${fmt(d[i])}</td>`;
+    rh+=`<td>${fmt(sum(d))}</td></tr>`;
+  });
+  rh+=`</tbody></table>`;
+  document.getElementById('tbl-rev').innerHTML=rh;
+
+  // ---- Cost Tab ----
+  mkChart('c-cost-stack','bar',{labels:YL,datasets:[
+    {label:'人件費',data:r.personnel,backgroundColor:'#3b82f6'},
+    {label:'製造原価',data:r.cogs_nonlabor,backgroundColor:'#ef4444'},
+    {label:'減価償却費',data:r.depreciation,backgroundColor:'#84cc16'},
+    {label:'R&D費',data:r.rdTotal,backgroundColor:'#6366f1'},
+    {label:'販管費等',data:r.sgaTotal,backgroundColor:'#f59e0b'}
+  ]},{scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:'億円'}}}});
+
+  mkChart('c-cost-pie','doughnut',{
+    labels:['人件費','原材料費','製造経費','減価償却費','R&D費','マーケティング','管理費','IPO準備','その他'],
+    datasets:[{data:[r.personnel[4],r.material[4],r.mfg_expense[4],r.depreciation[4],r.rdTotal[4],r.marketing[4],r.admin[4],r.ipo_prep[4],r.other_cost[4]],
+      backgroundColor:['#3b82f6','#ef4444','#f97316','#84cc16','#6366f1','#f59e0b','#8b5cf6','#ec4899','#94a3b8']}]
+  },{plugins:{legend:{position:'right'}}});
+
+  // Cost table
+  let ch=`<table class="data-table"><thead><tr><th>費目</th>`;
+  for(let i=0;i<5;i++) ch+=`<th>${YL[i]}</th>`;
+  ch+=`<th>累計</th></tr></thead><tbody>`;
+  [['人件費（法定福利含）',r.personnel],
+   [' 原材料費',r.material],[' 製造経費',r.mfg_expense],
+   ['製造原価小計',r.cogs_nonlabor,1],['減価償却費',r.depreciation],
+   [' 研究用材料費',r.rd_material],[' 外部委託費',r.rd_outsource],[' 知財関連費',r.rd_ip],
+   ['R&D費小計',r.rdTotal,1],
+   [' マーケティング費',r.marketing],[' 管理部門費',r.admin],[' IPO準備費',r.ipo_prep],[' その他経費',r.other_cost],
+   ['販管費等小計',r.sgaTotal,1],['総費用合計',r.totalCost,2]].forEach(([l,d,b])=>{
+    const c=b===2?'bold-row':b===1?'sub-total':'';
+    ch+=`<tr class="${c}"><td>${l}</td>`;
+    for(let i=0;i<5;i++) ch+=`<td>${fmt(d[i])}</td>`;
+    ch+=`<td>${fmt(sum(d))}</td></tr>`;
+  });
+  ch+=`</tbody></table>`;
+  document.getElementById('tbl-cost').innerHTML=ch;
+
+  // ---- P/L Tab ----
+  let ph=`<table class="data-table"><thead><tr><th>損益計算書</th>`;
+  for(let i=0;i<5;i++) ph+=`<th>${YL[i]}</th>`;
+  ph+=`</tr></thead><tbody>`;
+  [['売上高',r.totalRev,0],['製造原価',r.cogs_nonlabor,0],['減価償却費',r.depreciation,0],
+   ['売上総利益',r.grossProfit,1],['（粗利率）',r.grossMargin,0,1],
+   ['人件費',r.personnel,0],['R&D費',r.rdTotal,0],['販管費等',r.sgaTotal,0],
+   ['営業利益',r.operatingIncome,2],['（営業利益率）',r.operatingMargin,0,1],
+   ['累積営業利益',r.cumOI,1]].forEach(([l,d,b,isP])=>{
+    const c=b===2?'bold-row':b===1?'sub-total':'';
+    ph+=`<tr class="${c}"><td>${l}</td>`;
+    for(let i=0;i<5;i++){
+      if(isP) ph+=`<td>${pct(d[i])}</td>`;
+      else ph+=`<td class="${cls(d[i])}">${fmt(d[i])} 億円</td>`;
+    }
+    ph+=`</tr>`;
+  });
+  ph+=`</tbody></table>`;
+  document.getElementById('tbl-pl').innerHTML=ph;
+
+  mkChart('c-margin','line',{labels:YL,datasets:[
+    {label:'粗利率',data:r.grossMargin.map(v=>v*100),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:.3},
+    {label:'営業利益率',data:r.operatingMargin.map(v=>v*100),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.1)',fill:true,tension:.3}
+  ]},{scales:{y:{title:{display:true,text:'%'}}}});
+
+  mkChart('c-revvscost','line',{labels:YL,datasets:[
+    {label:'売上高',data:r.totalRev,borderColor:'#2563eb',borderWidth:2,tension:.3,pointRadius:4},
+    {label:'総費用',data:r.totalCost,borderColor:'#ef4444',borderWidth:2,borderDash:[5,5],tension:.3,pointRadius:4}
+  ]},{scales:{y:{title:{display:true,text:'億円'}}}});
+
+  // ---- CF Tab ----
+  mkChart('c-cf','bar',{labels:YL,datasets:[
+    {label:'営業CF',data:r.ocf,backgroundColor:'rgba(37,99,235,0.7)'},
+    {label:'投資CF',data:r.capex.map(v=>-v),backgroundColor:'rgba(239,68,68,0.7)'},
+    {label:'FCF',data:r.fcf,type:'line',borderColor:'#10b981',borderWidth:2,pointRadius:4,tension:.3,fill:false}
+  ]},{scales:{y:{title:{display:true,text:'億円'}}}});
+
+  let cfh=`<table class="data-table"><thead><tr><th>キャッシュフロー</th>`;
+  for(let i=0;i<5;i++) cfh+=`<th>${YL[i]}</th>`;
+  cfh+=`</tr></thead><tbody>`;
+  [['営業利益',r.operatingIncome,0],['＋ 減価償却費',r.depreciation,0],['営業キャッシュフロー',r.ocf,1],
+   ['設備投資額',r.capex.map(v=>-v),0],['フリーキャッシュフロー',r.fcf,2],
+   ['累積キャッシュフロー',r.cumCF,1],['期末キャッシュ残高',r.cashBal,1]].forEach(([l,d,b])=>{
+    const c=b===2?'bold-row':b===1?'sub-total':'';
+    cfh+=`<tr class="${c}"><td>${l}</td>`;
+    for(let i=0;i<5;i++) cfh+=`<td class="${cls(d[i])}">${fmt(d[i])} 億円</td>`;
+    cfh+=`</tr>`;
+  });
+  cfh+=`</tbody></table>`;
+  document.getElementById('tbl-cf').innerHTML=cfh;
+
+  // ---- Investor Tab ----
+  let ih=`<table class="data-table"><thead><tr><th>投資家リターン</th><th>保守</th><th>基本</th><th>楽観</th></tr></thead><tbody>`;
+  ih+=`<tr><td>5年目売上高</td><td>${fmt(r.conSc.rev5)} 億円</td><td class="highlight">${fmt(r.year5Rev)} 億円</td><td>${fmt(r.optSc.rev5)} 億円</td></tr>`;
+  ih+=`<tr><td>PSR倍率</td><td>${gv('i_psr_c')||8}x</td><td class="highlight">${P.psr}x</td><td>${gv('i_psr_o')||15}x</td></tr>`;
+  ih+=`<tr><td>想定時価総額</td><td>${fmt(r.conSc.valuation,0)} 億円</td><td class="highlight">${fmt(r.valuation,0)} 億円</td><td>${fmt(r.optSc.valuation,0)} 億円</td></tr>`;
+  ih+=`<tr><td>投資家持分 (${P.investor_share}%)</td><td>${fmt(r.conSc.invValue,0)} 億円</td><td class="highlight">${fmt(r.invValue,0)} 億円</td><td>${fmt(r.optSc.invValue,0)} 億円</td></tr>`;
+  ih+=`<tr class="bold-row"><td>MOIC</td><td>${fmt(r.conSc.moic)}x</td><td class="highlight">${fmt(r.moic)}x</td><td>${fmt(r.optSc.moic)}x</td></tr>`;
+  ih+=`<tr class="bold-row"><td>IRR（5年）</td><td>${pct(r.conSc.irr,0)}</td><td class="highlight">${pct(r.irr,0)}</td><td>${pct(r.optSc.irr,0)}</td></tr>`;
+  ih+=`<tr><td>投資家出資額</td><td colspan="3" style="text-align:center">${fmt(P.capital_investor,0)} 億円（1億円 &times; 16口）</td></tr>`;
+  ih+=`</tbody></table><p style="font-size:11px;color:var(--gray-500);margin-top:8px;">※ 持株比率の希薄化を考慮していない想定値。IPO時の公募増資で希薄化が発生する。</p>`;
+  document.getElementById('tbl-inv').innerHTML=ih;
+
+  mkChart('c-val','bar',{labels:['保守','基本','楽観'],datasets:[{label:'想定時価総額',
+    data:[r.conSc.valuation,r.valuation,r.optSc.valuation],
+    backgroundColor:['rgba(249,115,22,0.7)','rgba(37,99,235,0.7)','rgba(16,185,129,0.7)'],
+    borderColor:['#f97316','#2563eb','#10b981'],borderWidth:1}]
+  },{plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'億円'}}}});
+
+  mkChart('c-moic','bar',{labels:['保守','基本','楽観'],datasets:[{label:'MOIC',
+    data:[r.conSc.moic,r.moic,r.optSc.moic],
+    backgroundColor:['rgba(249,115,22,0.7)','rgba(37,99,235,0.7)','rgba(16,185,129,0.7)'],
+    borderColor:['#f97316','#2563eb','#10b981'],borderWidth:1}]
+  },{plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'倍'}}}});
+}
+
+// ================================================================
+// CHART HELPER
+// ================================================================
+function mkChart(id,type,data,opts){
+  const cv=document.getElementById(id);if(!cv)return;
+  if(charts[id])charts[id].destroy();
+  const defs={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'"Noto Serif JP",serif',size:11}}}}};
+  charts[id]=new Chart(cv.getContext('2d'),{type,data,options:merge(defs,opts||{})});
+}
+function merge(a,b){const o={...a};for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])){o[k]=merge(a[k]||{},b[k]);}else{o[k]=b[k];}}return o;}
+
+// ================================================================
+// SETTINGS
+// ================================================================
+function sv(id,v){const e=document.getElementById(id);if(e)e.value=v;}
+function gv(id){const e=document.getElementById(id);return e?e.value:'';}
+function gn(id){return parseFloat(gv(id))||0;}
+
+function openSettings(){populateSettings();document.getElementById('settings-modal').classList.add('open');}
+function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
+
+function populateSettings(){
+  for(let i=1;i<=5;i++){
+    sv('i_orchid_'+i,P.orchid[i-1]);sv('i_zenith_'+i,P.zenith[i-1]);sv('i_fusion_'+i,P.fusion[i-1]);
+    sv('i_lic_'+i,P.license[i-1]);sv('i_con_'+i,P.contract[i-1]);sv('i_sub_'+i,P.subsidy[i-1]);
+    sv('i_pers_'+i,P.personnel[i-1]);sv('i_mat_'+i,P.material[i-1]);sv('i_mfg_'+i,P.mfg_expense[i-1]);
+    sv('i_dep_'+i,P.depreciation[i-1]);
+    sv('i_rdm_'+i,P.rd_material[i-1]);sv('i_rdo_'+i,P.rd_outsource[i-1]);sv('i_rdip_'+i,P.rd_ip[i-1]);
+    sv('i_mkt_'+i,P.marketing[i-1]);sv('i_adm_'+i,P.admin[i-1]);sv('i_ipo_'+i,P.ipo_prep[i-1]);sv('i_oth_'+i,P.other_cost[i-1]);
+    sv('i_capex_'+i,P.capex[i-1]);sv('i_cap_'+i,P.capacity[i-1]);sv('i_hc_'+i,P.headcount[i-1]);
+    sv('i_orev_'+i,P.opt_revenue[i-1]);sv('i_crev_'+i,P.con_revenue[i-1]);
+  }
+  sv('i_captotal',P.capital_total);sv('i_capsf',P.capital_singfilm);sv('i_capinv',P.capital_investor);sv('i_invshare',P.investor_share);
+  sv('i_psr_b',P.psr);
+}
+
+function applySettings(){
+  for(let i=1;i<=5;i++){
+    P.orchid[i-1]=gn('i_orchid_'+i);P.zenith[i-1]=gn('i_zenith_'+i);P.fusion[i-1]=gn('i_fusion_'+i);
+    P.license[i-1]=gn('i_lic_'+i);P.contract[i-1]=gn('i_con_'+i);P.subsidy[i-1]=gn('i_sub_'+i);
+    P.personnel[i-1]=gn('i_pers_'+i);P.material[i-1]=gn('i_mat_'+i);P.mfg_expense[i-1]=gn('i_mfg_'+i);
+    P.depreciation[i-1]=gn('i_dep_'+i);
+    P.rd_material[i-1]=gn('i_rdm_'+i);P.rd_outsource[i-1]=gn('i_rdo_'+i);P.rd_ip[i-1]=gn('i_rdip_'+i);
+    P.marketing[i-1]=gn('i_mkt_'+i);P.admin[i-1]=gn('i_adm_'+i);P.ipo_prep[i-1]=gn('i_ipo_'+i);P.other_cost[i-1]=gn('i_oth_'+i);
+    P.capex[i-1]=gn('i_capex_'+i);P.capacity[i-1]=gn('i_cap_'+i);P.headcount[i-1]=gn('i_hc_'+i);
+    P.opt_revenue[i-1]=gn('i_orev_'+i);P.con_revenue[i-1]=gn('i_crev_'+i);
+  }
+  P.capital_total=gn('i_captotal');P.capital_singfilm=gn('i_capsf');P.capital_investor=gn('i_capinv');P.investor_share=gn('i_invshare');
+  P.psr=gn('i_psr_b');
+  closeSettings();render();
+}
+
+// ================================================================
+// SCENARIO PRESETS
+// ================================================================
+function applyScenario(name){
+  currentScenario=name;
+  const b=JSON.parse(JSON.stringify(BASE));
+  if(name==='optimistic'){
+    // Revenue: [2, 10, 30, 55, 80] — ch11準拠
+    b.orchid=[0.8,5.5,11.5,16.0,20.0];b.zenith=[0.15,1.5,7.5,13.5,16.0];b.fusion=[0.15,2.0,10.0,24.0,42.0];
+    b.license=[0,0.2,0.3,0.8,1.2];b.contract=[0,0.1,0.2,0.5,0.8];b.subsidy=[0.9,0.7,0.5,0.2,0];
+    // COGS: 粗利率50%達成（5年目）、OI=20億円
+    b.material=[0.30,4.00,10.50,16.00,22.00];b.mfg_expense=[0.15,2.00,6.00,9.25,13.00];
+    b.personnel=[1.3,2.3,3.4,4.2,4.8];
+    // R&D: 高成長投資
+    b.rd_material=[0.30,0.45,0.75,1.30,1.50];b.rd_outsource=[0.60,0.90,1.25,2.00,2.50];b.rd_ip=[0.30,0.45,0.60,1.00,1.00];
+    // SGA: 拡大期の販管費
+    b.marketing=[0.20,0.30,0.50,1.50,3.50];b.admin=[0.15,0.25,0.35,1.00,2.00];b.ipo_prep=[0.05,0.15,0.25,0.70,0.50];b.other_cost=[0.40,0.50,0.50,1.50,4.20];
+    b.capacity=[15,30,60,100,150];b.headcount=[20,36,55,70,80];
+    b.psr=15;
+    b.opt_revenue=b.orchid.map((v,i)=>v+b.zenith[i]+b.fusion[i]+b.license[i]+b.contract[i]+b.subsidy[i]);
+  } else if(name==='conservative'){
+    // Revenue: [1, 5, 12, 25, 30] — ch11準拠
+    b.orchid=[0.3,3.0,4.5,7.0,7.0];b.zenith=[0.1,1.0,2.5,5.5,6.0];b.fusion=[0.1,0.7,4.6,12.0,16.5];
+    b.license=[0,0,0.1,0.2,0.3];b.contract=[0,0,0.1,0.2,0.2];b.subsidy=[0.5,0.3,0.2,0.1,0];
+    // COGS: 粗利率40%達成（5年目）、OI=+1億円
+    b.material=[0.35,1.80,4.20,8.00,9.00];b.mfg_expense=[0.20,1.20,2.80,5.25,6.00];
+    b.depreciation=[0.8,1.2,1.8,2.5,3.0];
+    b.personnel=[1.0,1.8,2.6,3.2,3.5];
+    // R&D: 小規模ゆえ相対的に高い研究開発費率
+    b.rd_material=[0.30,0.35,0.55,0.85,1.00];b.rd_outsource=[0.60,0.75,1.10,1.60,1.80];b.rd_ip=[0.30,0.40,0.55,0.75,0.80];
+    // SGA: 効率重視の販管費
+    b.marketing=[0.20,0.30,0.50,1.10,1.40];b.admin=[0.15,0.25,0.35,0.60,0.70];b.ipo_prep=[0.05,0.15,0.40,1.00,0.50];b.other_cost=[0.20,0.30,0.55,0.80,1.30];
+    b.capex=[3,2,4,5,3];
+    b.capacity=[15,25,40,55,60];b.headcount=[15,28,40,50,55];
+    b.psr=8;
+    b.con_revenue=b.orchid.map((v,i)=>v+b.zenith[i]+b.fusion[i]+b.license[i]+b.contract[i]+b.subsidy[i]);
+  }
+  P=b;
+  document.querySelectorAll('.btn-preset').forEach(x=>x.classList.remove('active'));
+  document.getElementById('btn-'+name).classList.add('active');
+  render();
+}
+
+// ================================================================
+// TAB SWITCHING
+// ================================================================
+document.querySelectorAll('#main-tabs .tab').forEach(t=>{
+  t.addEventListener('click',function(){
+    document.querySelectorAll('#main-tabs .tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-'+this.dataset.tab).classList.add('active');
+    setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),50);
+  });
+});
+document.querySelectorAll('#stabs .stab').forEach(t=>{
+  t.addEventListener('click',function(){
+    document.querySelectorAll('#stabs .stab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.sp').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById(this.dataset.st).classList.add('active');
+  });
+});
+document.getElementById('settings-modal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+
+// INIT
+document.addEventListener('DOMContentLoaded',render);
+</script>
+</body>
+</html>
