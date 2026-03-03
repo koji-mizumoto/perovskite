@@ -131,6 +131,7 @@ body{font-family:var(--font-serif);background:var(--gray-50);color:var(--navy);l
     <button class="tab" data-tab="pl">損益計算書</button>
     <button class="tab" data-tab="cashflow">キャッシュフロー</button>
     <button class="tab" data-tab="investor">投資家リターン</button>
+    <button class="tab" data-tab="assumptions">前提条件</button>
   </div>
 
   <div class="tab-content active" id="tab-overview">
@@ -196,6 +197,143 @@ body{font-family:var(--font-serif);background:var(--gray-50);color:var(--navy);l
     <div class="chart-grid">
       <div class="section"><div class="section-title">シナリオ別時価総額</div><div class="chart-container"><canvas id="c-val"></canvas></div></div>
       <div class="section"><div class="section-title">投資倍率（MOIC）比較</div><div class="chart-container"><canvas id="c-moic"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-assumptions">
+    <div class="section" style="border-left:4px solid var(--accent);">
+      <div class="section-title">前提条件の全体像</div>
+      <p style="font-size:13px;color:var(--gray-700);line-height:1.8;margin-bottom:16px;">
+        本シミュレーターの計算は、以下の前提条件に基づいています。各パラメータは右上の「設定」ボタンから変更し、感度分析を行うことができます。基本シナリオは、既存薄膜太陽電池メーカー First Solar（2024年実績）の数値を参考に、達成蓋然性の高い水準で設定しています。
+      </p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">1. 資本構成・出資条件</div>
+      <table class="data-table">
+        <thead><tr><th>項目</th><th>数値</th><th>根拠・備考</th></tr></thead>
+        <tbody>
+          <tr><td>資本金合計</td><td>32億円</td><td>現物出資16億円＋現金出資16億円</td></tr>
+          <tr><td>Singfilm Solar出資</td><td>16億円（現物）</td><td>技術ライセンス、製造装置、IP等</td></tr>
+          <tr><td>投資家出資</td><td>16億円（現金）</td><td>1口1億円×16口</td></tr>
+          <tr><td>投資家持株比率</td><td>50%</td><td>IPO時に公募増資で希薄化の可能性あり</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2. 生産能力・稼働率</div>
+      <table class="data-table">
+        <thead><tr><th>パラメータ</th><th>楽観</th><th>基本</th><th>保守</th><th>設定根拠</th></tr></thead>
+        <tbody>
+          <tr><td>5年目生産能力</td><td>150MW</td><td>100MW</td><td>60MW</td><td>Phase 2投資規模による段階拡張</td></tr>
+          <tr><td>稼働率</td><td>85%</td><td>70%</td><td>55%</td><td>First Solar実績（80%）を参考に±15pt</td></tr>
+          <tr><td>ランプアップ期間</td><td>—</td><td>1年目は試運転</td><td>—</td><td>SG本社15MWライン実績に基づく</td></tr>
+        </tbody>
+      </table>
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>年度別生産能力</th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th></tr></thead>
+        <tbody>
+          <tr><td>基本シナリオ</td><td>15MW</td><td>30MW</td><td>50MW</td><td>80MW</td><td>100MW</td></tr>
+          <tr><td>従業員数</td><td>18名</td><td>32名</td><td>47名</td><td>60名</td><td>67名</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">3. 売上前提</div>
+      <table class="data-table">
+        <thead><tr><th>製品</th><th>対象市場</th><th>価格帯</th><th>成長ドライバー</th></tr></thead>
+        <tbody>
+          <tr><td>Orchid（IoT/ESL）</td><td>電子棚札、IoTセンサー、家電</td><td>小型セル単価</td><td>ESL市場CAGR 30%、Hanshow等との既存取引</td></tr>
+          <tr><td>Zenith（宇宙/ドローン）</td><td>人工衛星、ドローン、高高度</td><td>プレミアム価格</td><td>超軽量（44W/g）、放射線耐性実証済み</td></tr>
+          <tr><td>Fusion（BIPV/VIPV）</td><td>建材一体型、車載</td><td>モジュール単価</td><td>BIPV市場2030年400億ドル予測</td></tr>
+          <tr><td>技術ライセンス</td><td>他社への技術供与</td><td>—</td><td>Oxford PV→First Solar/Trinasolarの先例</td></tr>
+          <tr><td>受託研究</td><td>企業・大学との共同研究</td><td>—</td><td>NUSとの学術連携パイプライン</td></tr>
+          <tr><td>補助金収入</td><td>GI基金、GX補助金等</td><td>—</td><td>国策支援（GI基金340億円超）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">4. コスト構造の前提</div>
+      <table class="data-table">
+        <thead><tr><th>パラメータ</th><th>楽観</th><th>基本</th><th>保守</th><th>設定根拠</th></tr></thead>
+        <tbody>
+          <tr><td>5年目粗利率</td><td>50%</td><td>45%</td><td>40%</td><td>First Solar 44%（2024年実績）基準±5pt</td></tr>
+          <tr><td>製造コスト目標</td><td>約30円/W</td><td>約45円/W</td><td>約55円/W</td><td>量産効果の実現度合いによる</td></tr>
+          <tr><td>R&D費率（対売上）</td><td>6%</td><td>4%</td><td>12%</td><td>規模の経済の差（大規模は比率低下）</td></tr>
+        </tbody>
+      </table>
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>費目</th><th>含まれる項目</th></tr></thead>
+        <tbody>
+          <tr><td>原材料費</td><td>ヨウ化鉛、有機ハライド、ガラス基板、封止材、導電性基材（ITO/FTO）、スパッタリングターゲット、正孔輸送材</td></tr>
+          <tr><td>製造経費</td><td>電力・ガス（真空蒸着）、超純水、製造用薬品・溶剤、クリーンルーム消耗品、包装材、出荷・物流費</td></tr>
+          <tr><td>人件費</td><td>基本給、賞与、法定福利費（健康保険・厚生年金・雇用保険・労災保険）、通勤手当</td></tr>
+          <tr><td>R&D費</td><td>試作用材料、分析装置消耗品、大学/研究機関との共同研究、信頼性試験委託、特許出願・維持費</td></tr>
+          <tr><td>販管費</td><td>展示会・カタログ・デジタルマーケ、代理店手数料、事務所賃料、IT、保険、旅費、顧問料</td></tr>
+          <tr><td>IPO関連</td><td>監査法人報酬、主幹事証券会社報酬、弁護士費用、IR・ロードショー費用</td></tr>
+          <tr><td>減価償却費</td><td>製造設備（真空蒸着装置等）、クリーンルーム設備、建物附属設備、研究開発用装置</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">5. 設備投資（CAPEX）の前提</div>
+      <table class="data-table">
+        <thead><tr><th>項目</th><th>1年目</th><th>2年目</th><th>3年目</th><th>4年目</th><th>5年目</th><th>累計</th></tr></thead>
+        <tbody>
+          <tr><td>設備投資額（億円）</td><td>5.0</td><td>3.0</td><td>6.0</td><td>9.0</td><td>6.0</td><td>29.0</td></tr>
+          <tr><td>生産能力（MW）</td><td>15</td><td>30</td><td>50</td><td>80</td><td>100</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--gray-500);margin-top:8px;line-height:1.5;">
+        ※上記CAPEXはGX設備補助金（約40%）反映後の純額です。補助金未反映時のPhase 1合計は10〜20億円、Phase 2合計は30〜60億円。設備投資はP/Lに計上されず、減価償却費として年次で費用化されます。
+      </p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">6. IPO・投資家リターンの前提</div>
+      <table class="data-table">
+        <thead><tr><th>パラメータ</th><th>楽観</th><th>基本</th><th>保守</th><th>設定根拠</th></tr></thead>
+        <tbody>
+          <tr><td>IPO時PSR</td><td>15x</td><td>10x</td><td>8x</td><td>ディープテック上場時PSR: 10〜20xが一般的</td></tr>
+          <tr><td>黒字化時期</td><td>3年目</td><td>4年目</td><td>5年目</td><td>ディープテック業界標準は3〜5年</td></tr>
+          <tr><td>5年目営業利益</td><td>20億円（25%）</td><td>9.1億円（18%）</td><td>+1億円（3%）</td><td>粗利額−販管費−R&D費で算出</td></tr>
+          <tr><td>上場市場</td><td colspan="3" style="text-align:center;">東証グロース市場</td><td>5年目Q2を予定</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" style="background:var(--gray-50);">
+      <div class="section-title">7. P/Lに含まれない項目</div>
+      <table class="data-table">
+        <thead><tr><th>項目</th><th>理由</th><th>計上先</th></tr></thead>
+        <tbody>
+          <tr><td>土地取得費</td><td>資産計上、非償却資産</td><td>B/S（固定資産）</td></tr>
+          <tr><td>設備投資（CAPEX）</td><td>資産計上後、減価償却でP/Lに反映</td><td>CF（投資活動）</td></tr>
+          <tr><td>法人税等</td><td>初期赤字のため税負担なし。4年目以降は繰越欠損金を控除</td><td>P/L（税引後利益計算時）</td></tr>
+          <tr><td>支払利息</td><td>銀行借入を主要資金源としていないため未計上</td><td>P/L（営業外費用、発生時）</td></tr>
+          <tr><td>運転資金の増減</td><td>売掛金・在庫・買掛金の変動</td><td>CF（営業活動）</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--gray-500);margin-top:8px;line-height:1.5;">
+        ※本シミュレーターの損益計算書は営業利益までの計上です。経常利益・税引前利益については、借入条件・税制優遇等の確定後に精緻化します。
+      </p>
+    </div>
+
+    <div class="section" style="border-left:4px solid var(--green);background:var(--green-bg);">
+      <div class="section-title">8. 主要な参考ベンチマーク</div>
+      <table class="data-table">
+        <thead><tr><th>ベンチマーク企業</th><th>参考指標</th><th>本計画での適用</th></tr></thead>
+        <tbody>
+          <tr><td>First Solar（米国）</td><td>粗利率44%、稼働率80%超（2024年実績）</td><td>粗利率・稼働率の基準値</td></tr>
+          <tr><td>Oxford PV（英国）</td><td>100MWライン約70名体制</td><td>人員計画のベンチマーク（67名）</td></tr>
+          <tr><td>HyET Solaris（蘭）</td><td>€60M調達でフレキシブル工場建設</td><td>製造拠点投資規模の参考</td></tr>
+          <tr><td>Oxford PV→First Solar</td><td>ペロブスカイト技術ライセンス契約</td><td>IPライセンス収入の先例</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
